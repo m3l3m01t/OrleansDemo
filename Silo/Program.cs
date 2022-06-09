@@ -7,6 +7,7 @@ using Orleans.Configuration;
 using Orleans.Hosting;
 
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Silo
@@ -44,6 +45,15 @@ namespace Silo
             // define the cluster configuration
             var builder = new SiloHostBuilder()
                 .UseLocalhostClustering()
+            	//.ConfigureEndpoints(siloPort: 11111, gatewayPort: 30000)
+		.Configure<EndpointOptions>(options =>
+		{
+		    //options.SiloPort = 11111;
+		    //options.GatewayPort = 30000;
+		    options.AdvertisedIPAddress = IPAddress.Parse("172.22.131.32");
+		    options.GatewayListeningEndpoint = new IPEndPoint(IPAddress.Any, 30000);
+		    options.SiloListeningEndpoint = new IPEndPoint(IPAddress.Any, 11111);
+		})
                 .Configure<ClusterOptions>(options =>
                 {
                     options.ClusterId = "dev";
@@ -61,3 +71,5 @@ namespace Silo
         }
     }
 }
+
+// vim: set ts=4 sw=4 et:
