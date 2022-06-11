@@ -4,8 +4,9 @@ using Microsoft.Extensions.Logging;
 
 using Orleans;
 using Orleans.Configuration;
-
+using Orleans.Hosting;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Client
@@ -25,7 +26,8 @@ namespace Client
                 {
                     while (true)
                     {
-                        var content = Console.ReadLine();
+                        // var content = Console.ReadLine();
+                        var content = DateTime.Now.ToLongTimeString();
                         if (string.IsNullOrWhiteSpace(content))
                         {
                             continue;
@@ -36,6 +38,7 @@ namespace Client
                         }
                         await DoClientWork(client, content);
                         //Console.ReadKey();
+                        await Task.Delay(10);
                     }
                 }
 
@@ -55,7 +58,14 @@ namespace Client
         {
             IClusterClient client;
             client = new ClientBuilder()
-                .UseLocalhostClustering()
+                //.UseLocalhostClustering()
+                //.UseStaticClustering(new IPEndPoint(IPAddress.Parse("10.106.225.105"), 30000),
+                //  new IPEndPoint(IPAddress.Parse("10.106.225.64"), 30000)
+                //)
+                .UseAdoNetClustering(o=>{
+                  o.Invariant = "Npgsql";
+                  o.ConnectionString = "server=127.0.0.1; port=5432; user id=orleans; password=daredevor;database=orleans; pooling=true";
+                })
                 .Configure<ClusterOptions>(options =>
                 {
                     options.ClusterId = "dev";
