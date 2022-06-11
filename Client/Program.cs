@@ -8,6 +8,7 @@ using Orleans.Hosting;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Orleans.Streams;
 
 namespace Client
 {
@@ -38,7 +39,7 @@ namespace Client
                         }
                         await DoClientWork(client, content);
                         //Console.ReadKey();
-                        await Task.Delay(10);
+                        await Task.Delay(500);
                     }
                 }
 
@@ -56,15 +57,14 @@ namespace Client
 
         private static async Task<IClusterClient> ConnectClient()
         {
-            IClusterClient client;
-            client = new ClientBuilder()
+            var client = new ClientBuilder()
                 //.UseLocalhostClustering()
                 //.UseStaticClustering(new IPEndPoint(IPAddress.Parse("10.106.225.105"), 30000),
                 //  new IPEndPoint(IPAddress.Parse("10.106.225.64"), 30000)
                 //)
                 .UseAdoNetClustering(o=>{
-                  o.Invariant = "Npgsql";
-                  o.ConnectionString = "server=127.0.0.1; port=5432; user id=orleans; password=daredevor;database=orleans; pooling=true";
+                    o.Invariant = "Npgsql";
+                    o.ConnectionString = "server=127.0.0.1; port=5432; user id=orleans; password=daredevor;database=orleans; pooling=true";
                 })
                 .Configure<ClusterOptions>(options =>
                 {
@@ -81,11 +81,31 @@ namespace Client
 
         private static async Task DoClientWork(IClusterClient client, string content)
         {
+            /*
+            var stream = client.GetStreamProvider("sp").GetStream<string>(Guid.NewGuid(), "sns");
+            await stream.SubscribeAsync((s, token) =>
+                {
+                    return Task.CompletedTask;
+                },
+                exception =>
+                {
+                    return Task.CompletedTask;
+                },
+                () =>
+                {
+                    return Task.CompletedTask;
+                });
+            */
             // example of calling grains from the initialized client
             var friend = client.GetGrain<IHello>(0);
             //var response = await friend.SayHello("Good morning, HelloGrain!");
             var response = await friend.SayHello(content);
-            Console.WriteLine($"\n\n{response}\n\n");
+            Console.WriteLine($"\nFriend said: {response}\n\n");
+            
+            var simpleton = client.GetGrain<ISimpleton>(0);
+            //var response = await friend.SayHello("Good morning, HelloGrain!");
+            var r = await simpleton.Greeting(content);
+            Console.WriteLine($"\nSimpleton said: {r}\n\n");
         }
     }
 }
