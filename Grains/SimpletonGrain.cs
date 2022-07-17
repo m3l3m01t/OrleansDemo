@@ -1,15 +1,30 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using GrainInterfaces;
-using Orleans.Concurrency;
+using Orleans;
+using Orleans.Placement;
 
 namespace Grains
 {
-  [StatelessWorker]
-  public class SimpletonGrain : Orleans.Grain, ISimpleton
+  [ActivationCountBasedPlacement]
+  //[StatelessWorker]
+  public class SimpletonGrain : Grain, ISimpleton
   {
-    public Task<string> Greeting(string words)
+    private static Random _random = new Random();
+    
+    public async Task<string> Greeting(string words)
     {
-      return Task.FromResult("Hmm?");
+      var key = this.GetPrimaryKeyLong();
+      var grain = GrainFactory.GetGrain<ITrack>(key);
+
+
+      var p1 = _random.Next(1, 9999) / 1000.0;
+      var p2 = _random.Next(1, 9999) / 1000.0;
+      var p3 = _random.Next(1, 9999) / 1000.0;
+      
+      await grain.Record(DateTime.Now, p1, p2, p3);
+      
+      return "Hmm?";
     }
   }
 }

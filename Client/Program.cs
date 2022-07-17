@@ -6,6 +6,7 @@ using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Orleans.Streams;
@@ -14,33 +15,49 @@ namespace Client
 {
     public class Program
     {
+        static Random _random = new Random();
+
         public static async Task<int> Main(string[] args)
         {
             return await RunMainAsync();
         }
 
+        private static IEnumerable<long> UserKeys()
+        {
+            var keys = new List<long>();
+            for (int i = 0; i < 10; i++)
+            {
+                keys.Add(_random.NextInt64());    
+            }
+
+            while (true)
+            {
+                int index = _random.Next(0, 10);
+                yield return keys[index];
+                //index = (index+1) % keys.Count;
+            }
+        }
+        
         private static async Task<int> RunMainAsync()
         {
             try
             {
-                using (var client = await ConnectClient())
+                await using var client = await ConnectClient();
+                foreach (var id in UserKeys())
                 {
-                    while (true)
+                    // var content = Console.ReadLine();
+                    var content = DateTime.Now.ToLongTimeString();
+                    if (string.IsNullOrWhiteSpace(content))
                     {
-                        // var content = Console.ReadLine();
-                        var content = DateTime.Now.ToLongTimeString();
-                        if (string.IsNullOrWhiteSpace(content))
-                        {
-                            continue;
-                        }
-                        if (content == "quit")
-                        {
-                            break;
-                        }
-                        await DoClientWork(client, content);
-                        //Console.ReadKey();
-                        await Task.Delay(500);
+                        continue;
                     }
+                    if (content == "quit")
+                    {
+                        break;
+                    }
+                    await DoClientWork(id, client, content);
+                    //Console.ReadKey();
+                    await Task.Delay(500);
                 }
 
                 return 0;
@@ -79,7 +96,7 @@ namespace Client
             return client;
         }
 
-        private static async Task DoClientWork(IClusterClient client, string content)
+        private static async Task DoClientWork(long key, IClusterClient client, string content)
         {
             /*
             var stream = client.GetStreamProvider("sp").GetStream<string>(Guid.NewGuid(), "sns");
@@ -97,12 +114,12 @@ namespace Client
                 });
             */
             // example of calling grains from the initialized client
-            var friend = client.GetGrain<IHello>(0);
+            var friend = client.GetGrain<IHello>(key);
             //var response = await friend.SayHello("Good morning, HelloGrain!");
             var response = await friend.SayHello(content);
             Console.WriteLine($"\nFriend said: {response}\n\n");
             
-            var simpleton = client.GetGrain<ISimpleton>(0);
+            var simpleton = client.GetGrain<ISimpleton>(key);
             //var response = await friend.SayHello("Good morning, HelloGrain!");
             var r = await simpleton.Greeting(content);
             Console.WriteLine($"\nSimpleton said: {r}\n\n");

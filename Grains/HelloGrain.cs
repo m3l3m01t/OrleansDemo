@@ -13,7 +13,7 @@ namespace Grains
     private readonly ILogger<HelloGrain> _logger;
     private readonly IPersistentState<GreetingState> _state;
 
-    public HelloGrain(ILogger<HelloGrain> logger, [PersistentState("state", "postgre")] IPersistentState<Models.GreetingState> state)
+    public HelloGrain(ILogger<HelloGrain> logger, [PersistentState("state")] IPersistentState<Models.GreetingState> state)
     {
       _logger = logger;
       _state = state;

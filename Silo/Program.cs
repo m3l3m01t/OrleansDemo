@@ -145,10 +145,16 @@ namespace Silo
           o.Invariant = invariant;
           o.ConnectionString = connectionString;
         })
-        .AddAdoNetGrainStorage("postgre", o =>
+        //.AddAdoNetGrainStorage("postgre", o =>
+        //{
+        //  o.Invariant = invariant;
+        //  o.ConnectionString = connectionString;
+        //})
+        .AddAdoNetGrainStorageAsDefault((AdoNetGrainStorageOptions opt) =>
         {
-          o.Invariant = invariant;
-          o.ConnectionString = connectionString;
+            opt.Invariant = invariant;
+            opt.ConnectionString = connectionString;
+            opt.UseJsonFormat = true;
         })
         .Configure<EndpointOptions>(options =>
         {
@@ -163,6 +169,9 @@ namespace Silo
           options.ServiceId = "OrleansBasics";
         })
         .ConfigureApplicationParts(parts => { parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences(); })
+        //.AddLogStorageBasedLogConsistencyProvider("postgre")
+        //.AddLogStorageBasedLogConsistencyProviderAsDefault()
+        .AddStateStorageBasedLogConsistencyProviderAsDefault()
         .ConfigureLogging(logging => logging.AddConsole());
 
       var host = builder.Build();
